@@ -9,7 +9,7 @@
     <title>Final Project | <%= title %></title>
     <!-- @TODO: title태그를 완성하십시오 -->
 
-    <meta name="author" content="Aaron" />
+    <meta name="sion" content="Aaron" />
     <!-- @TODO: 자기 이름을 작성하십시오 -->
 
     <!-- @TODO: CSS 파일에 대한 link테그를 완성하십시오 -->
@@ -27,8 +27,14 @@
     <!-- <link rel="stylesheet" href="/css/aaronkr.css" /> -->
   </head>
   <body>
-    <%- include('_partials/_header') %> <%- body %> <%-
-    include('_partials/_footer') %>
+    <%- include('_partials/_header') %>
+    <!--
+      Listing 22.4 (p. 329)
+      layout.ejs에서 플래시 메시지 추가
+    -->
+    <%- include('_partials/_flashMsg') %>
+    <%- body %> 
+    <%- include('_partials/_footer') %>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->

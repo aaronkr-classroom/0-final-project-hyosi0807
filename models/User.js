@@ -7,6 +7,11 @@
  */
 
 /**
+ * passport-local-mongoose를 요청
+ */
+const passportLocalMongoose = require("passport-local-mongoose")
+
+/**
  * 노트: Mongoose Schema 객체에서 객체 소멸(object destruct)의 사용에 주목하자.
  * {Schema}는 Mongoose의 Schema 객체를 동일한 이름의 상수로 할당한다. 나중에 이
  * 새로운 형식을 다른 모델에 적용할 것이다.
@@ -106,8 +111,92 @@ userSchema.pre("save", function (next) {
   }
 });
 
+/**
+ * User 모델에 플러그인으로서 passport-local-mongoose의 추가
+ */
+userSchema.plugin(passportLocalMongoose, {
+  usernameField: "email"
+}); // 사용자 스키마 플러그인으로서 passport-local-mongoose의 추가
+
 module.exports = mongoose.model("User", userSchema);
 
 /**
  * 노트: 이 책을 쓰는 시점에는 Mongoose 훅에서 화살표 함수는 작동하지 않는다.
  */
+
+/**
+ * 4-21 캡스톤 User.js 수정
+ */
+const mongoose = require("mongoose",
+  { Schema } = require("mongoose"),
+  Subscriber = require("./subscriber"),
+  userSchema = new Schema(
+    {
+      name: {  // first 및 last 속성 추가
+        first: {
+          type: true
+        },
+        last: {
+          type: String,
+          trim: true
+        }
+      },
+      email: {
+        type: String,
+        required: true,
+        unique: true
+      },
+      zipCode: {
+        type: Number,
+        min: [10000, "Zip code too short"],
+        max: 99999
+      },  // 패스워드 요청
+      password: {
+        type: String,
+        required: true
+      },
+      courses: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Course"
+        }  // 복수의 강좌와 사용자의 연결
+      ],
+      subscribedAccount: {
+        type: Schema.Types.ObjectId,
+        ref: "Subscriber"
+      }  // 사용자와 구독자의 연결
+    },
+    {
+      timestamps: true  // timestamps 속성 추가
+    }
+  )
+);
+
+module.exports = mongoose.model("User", userSchema);
+
+/**
+ * 가상 속성과 pre("save") 훅 추가
+ */
+userSchema.virtual("fullName").get(function() {  // fullName 가상 속성 추가
+  return `${this.name.first} ${this.name.last}`;
+});
+
+userSchema.pre("save", function (next) {  // 구독자와의 링크를 위해 pre("save")훅을 추가
+  let user = this;
+  if (user.subscribedAccount === undefind) {  // 링크된 subscribedAccount 정의 여부 확인
+    Subscriber.findOne({
+      email: user.email
+    })  // 사용자 email을 포함하는 구독자 도큐먼트 검색
+      .then(subscriber => {
+        user.subscribedAccount = subscriber;
+        next();  // 다음 미들웨어 함수 호출
+      })
+      .catch(error => {
+        console.log(`Error in connecting subscriber:
+          ${error.message}`);
+          next(error);
+      });
+  } else {
+    next();
+  }
+});

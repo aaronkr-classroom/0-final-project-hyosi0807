@@ -7,6 +7,11 @@
  * =====================================================================
  */
 
+/**
+ * 4-21 라우트 구조화
+ */
+const subscriber = require("./controllers/subscribersController");
+
 // modules
 const express = require("express"), // express를 요청
   layouts = require("express-ejs-layouts"), // express-ejs-layout의 요청
@@ -28,18 +33,16 @@ const pagesController = require("./controllers/pagesController"),
  */
 
 // 애플리케이션에 Mongoose 설정
-const mongoose = require("mongoose"), // mongoose를 요청
-  dbName = "ut-nodejs";
+const mongoose = require("mongoose");
 
 // 데이터베이스 연결 설정
-mongoose.connect(`mongodb://127.0.0.1:27017/${dbName}`, {
+mongoose.connect(`mongodb+srv://zzkzz0001:sion@ut-node.dt0wsb9.mongodb.net/?retryWrites=true&w=majority&appName=ut-node`, {
   useNewUrlParser: true,
 });
 
-// 연결되면 메시지를 보냄
 const db = mongoose.connection;
 db.once("open", () => {
-  console.log(`Connected to ${dbName} MongoDB using Mongoose!`);
+  console.log("Connected to MONGODB!!!");
 });
 
 /**
@@ -87,23 +90,23 @@ router.get("/subscribers/new", subscribersController.new); // 생성 폼을 보�
 router.post(
   "/subscribers/create",
   subscribersController.create,
-  subscribersController.redirectView
+  subscribersController.redirectView  // 4-21 생성을 위한 첫 번째 POST 라우트 추가
 ); // 생성 폼에서 받아온 데이터의 처리와 결과를 사용자 보기 페이지에 보여주기
 router.get(
   "/subscribers/:id",
   subscribersController.show,
-  subscribersController.showView
+  subscribersController.showView  // ObjectId에 기초한 구독자 보기 라우트 추가
 );
 router.get("/subscribers/:id/edit", subscribersController.edit); // viewing을 처리하기 위한 라우트 추가
 router.put(
   "/subscribers/:id/update",
   subscribersController.update,
-  subscribersController.redirectView
+  subscribersController.redirectView  // 구독자 업데이트를 위한 라우트 추가
 ); // 편집 폼에서 받아온 데이터의 처리와 결과를 사용자 보기 페이지에 보여주기
 router.delete(
   "/subscribers/:id/delete",
   subscribersController.delete,
-  subscribersController.redirectView
+  subscribersController.redirectView  // 구독자 삭제를 위한 라우트 추가
 );
 
 /**
@@ -212,3 +215,58 @@ app.listen(app.get("port"), () => {
   // 3000번 포트로 리스닝 설정
   console.log(`Server running at http://localhost:${app.get("port")}`);
 });
+
+
+/**
+ * login 라우트 추가
+ */
+router.get("/users/login", usersController.login); // login 라우트 추가
+router.get("/users/login", usersController.authenticate); // authenticate 액션으로 POST 데이터 전달
+router.get("/users/logout", usersController.logout,usersController.redirectView); // logout 라우트 추가 및 뷰로 리디렉션
+
+/**
+ * Passport를 이용한 암호화 추가
+ */
+const passport = require("passport"),
+  cookieParser = require("cookie-parser"),
+  expressSession = require("express-session"),
+  User = require("./models/user");
+
+router.use(cookieParser("secretCuisine123")); // 비밀 키로 cookieParser 설정
+router.use(expressSessiojn({
+  secret: "secretCuisine123", 
+  cookie: {
+    maxAge: 4000000
+  },
+  resave: false,
+  saveUninitialized: false
+})); // 세션 사용을 위한 Express.js 설정
+
+router.use(passport.initialize()); // passport 사용 및 초기화를 위한 Express.js 설정
+router.use(passport.session()); // passport에게 세션을 사용하도록 함
+passport.use(User.createStrategy()); // 기본 로그인 스트레티지 설정
+passport.serializeUser(User.serializeUser()); // 사용자 데이터의 암호화, 복호화, 압출을 위한 passport의 설정
+passport.deserializeUser(User.deserializeUser());
+
+
+/**
+ * 플래시 메시징 추가
+ */
+const connectFlash = require("connect-flash");
+
+router.use(connectFlash());
+router.use((req, res, next) => {
+  res.locals.flashMessages = req.flash(); // 로컬 변수로 플래시 메시지 추가
+  next();
+});
+
+/**
+ * 유효성 체크 미들웨어 추가
+ */
+const expressValidator = require("express-validator");
+
+router.use(expressValidator());
+
+router.post("/users/create", usersController.validate,
+  usersController.create, usersController.redirectView
+); // 사용자 생성 라우트에 유효성 체크 미들웨어 추가

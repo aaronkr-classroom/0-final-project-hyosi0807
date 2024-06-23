@@ -38,3 +38,25 @@
 <div>
   <a class="button" href="/subscribers">View all subscribers</a>
 </div>
+
+<!-- 4-21 구독자 보기 뷰 -->
+<h1>Subscriber Data for <%= subscriber.name %></h1>  <!-- 구독자 속성의 출력 -->
+
+<table>
+  <tr>
+    <th>Name</th>
+    <td><%= subscriber.name %></td>
+  </tr>
+  <tr>
+    <th>Email</th>
+    <td><%= subscriber.email %></td>
+  </tr>
+  <tr>
+    <th>Zip Code</th>
+    <td><%= subscriber.zipCode %></td>
+  </tr>
+</table>
+
+<!-- 4-21 구독 강좌 수 보기 -->
+<p>This subscriber has <%= subscriber.courses.length %> associated 
+  course(s)</p> <!-- 구독 강좌 수 출력 -->

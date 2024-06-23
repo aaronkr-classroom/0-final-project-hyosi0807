@@ -1,12 +1,108 @@
 // controllers/subscribersController.js
 "use strict";
 
+const { application } = require("express");
 /**
  * Listing 16.4 (p. 230-231)
  * 구독자를 위한 컨트롤러 액션 정의
  */
 // 구독자 모델 요청
+
+
+/**
+ * 4-21 구독자 컨트롤러 액션 추가
+ */
 const Subscriber = require("../models/Subscriber");
+  getSubscriberParams = (body) => {  // 4-21 요청으로부터 구독자 데이터를 추출하기 위한 사용자 정의 함수 제작
+    return {
+      name: body.name,
+      email: body.email,
+      zipCode: parseInt(body.zipCode)
+    };
+  };
+module.exports = {
+  index: (req, res, next) => {  // 4-21 모든 구독자 도큐먼트를 찾기 위한 index action 생성
+    Subscriber.find()
+      .then(subscribers => {
+        res.locals.subscribers = subscribers;
+        next();
+      })
+      .catch(error => {
+        console.log(`Error fetching subscribers: ${error.message}`);
+        next(error);
+      });
+  },
+  indexView: (req, res) => {
+    res.render("subscribers/index");
+  },
+  new: (req, res) => {
+    res.render("subscribers/new");
+  },
+
+  create: (req, res, next) => {  // 새로운 구독자 생성을 위한 create action 생성
+    let subscriberParams = getSubscriberParams(req.body);
+    Subscriber.create(subscriberParams)
+      .then(subscriber => {
+        res.locals.redirect = "/subscribers";
+        res.locals.subscriber = subscriber;
+        next();
+      })
+      .catch(error => {
+        console.log(`Error saving subscribers:${error.message}`);
+        next(error);
+      });
+  },
+
+  redirectView: (req, res, next) => {
+    let redirectPath = res.locals.redirectl;
+    if (redirectPath) res.redirect(redirectPath);
+    else next();
+  },
+  show: (req, res, next) => {  // 구독자 데이터를 출력하기 위한 show 액션 생성
+    var subscriberId = req.params.id;
+    Subscriber.findById(subscriberId)
+      .then(subscriber => {
+        res.locals.subscriber = subscriber;
+        next();
+      })
+  }
+}
+
+ 
+/**
+ * 4-21 캡스톤 Subscriber 수정
+ */
+const mongoose = require("mongoose"),
+  { Schema } = mongoose, // Mongoose의 요청
+  subscriberSchema = new Schema({
+    name: {  // 스키마 속서의 추가
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      unique: true
+    },
+    zipCode: {
+      type: Number,
+      min: [10000, "Zip code too short"],
+      max: 99999
+    },
+    courses: [{type: Schema.Types.ObjectId, ref: "Course"}]  // 복수 강좌의 연계
+  }, {
+    timestamps: true
+  });
+
+  subscriberSchema.methods.getInfo = function () {  // getInfo 인스턴스 메소드 추가
+    return `Name: ${this.name} Email: ${this.email}
+      Zip Code: ${this.zipCode}`;
+  };
+
+module.exports = mongoose.model("Subscriber",
+  subscriberSchema
+); // Subscriber 모델의 export
 
 module.exports = {
   index: (req, res, next) => {
@@ -112,6 +208,7 @@ module.exports = {
    */
   // edit 액션 추가
   edit: (req, res, next) => {
+    var subscriberId = req.params.id;  // 4-21 컨트롤러 제작
     let subscriberId = req.params.id;
     Subscriber.findById(subscriberId) // ID로 데이터베이스에서 사용자를 찾기 위한 findById 사용
       .then((subscriber) => {
@@ -128,19 +225,14 @@ module.exports = {
   },
 
   // update 액션 추가
-  update: (req, res, next) => {
+  update: (req, res, next) => {  // 4-21 기존 구독자 도큐먼트의 새로운 값으로 설정하기 위한 update 액션 설정
     let subscriberId = req.params.id,
-    subscriberParams = {
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-      newsletter: req.body.newsletter,
-    }; // 요청으로부터 사용자 파라미터 취득
+    subscriberParams = getSubscriberParams(req.body);
 
-    User.findByIdAndUpdate(subscriberId, {
+    Subscriber.findByIdAndUpdate(subscriberId, {
       $set: subscriberParams,
     }) //ID로 사용자를 찾아 단일 명령으로 레코드를 수정하기 위한 findByIdAndUpdate의 사용
-      .then((user) => {
+      .then((subscriber) => {
         res.locals.redirect = `/subscribers/${subscriberId}`;
         res.locals.subscriber = subscriber;
         next(); // 지역 변수로서 응답하기 위해 사용자를 추가하고 다음 미들웨어 함수 호출
@@ -155,7 +247,7 @@ module.exports = {
    * Listing 20.9 (p. 298)
    * delete 액션의 추가
    */
-  delete: (req, res, next) => {
+  delete: (req, res, next) => {  // 4-21 구독자 도큐먼트를 삭제하기 위한 delete 액션 생성
     let subscriberId = req.params.id;
     Subscriber.findByIdAndRemove(subscriberId) // findByIdAndRemove 메소드를 이용한 사용자 삭제
       .then(() => {

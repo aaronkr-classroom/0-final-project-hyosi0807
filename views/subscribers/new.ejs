@@ -74,3 +74,20 @@
     </div>
   </div>
 </main>
+
+<!-- 4-21 새로운 구독자 생성 폼 -->
+<div class="data-form">
+  <form action="/subscribers/create" method="POST">  <!-- 새로운 구독자 생성을 위한 폼 추가 -->
+    <h2>Create a new subscriber:</h2>
+    <label for="inputName">Name</label>
+    <input type="text" name="name" id="inputName" placeholde="Name" 
+    autofocus>
+    <label for="inputEmail">Email address</label>
+    <input type="email" name="email" id="inputEmail"
+    placehoder="Email address" required>
+    <label for="inputZipCode">Zip Code</label>
+    <input type="text" name="zipCode" id="inputZipCode"
+    pattern="[0-9]{5}" placeholder="Zip Code" required>
+    <button type="submit">Create</button>
+  </form>
+</div>

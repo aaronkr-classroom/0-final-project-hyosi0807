@@ -7,6 +7,19 @@
  * userController.js에서 인덱스 액션 생성과 index 액션의 재방문
  */
 const User = require("../models/User"); // 사용자 모델 요청
+const { create } = require("./subscribersController");
+
+const passport = require("passport") // Passport.js 인증 추가
+
+authenticate: passport.authenticate("local", { // 플래시 메시지와 리디렉션을 포함한 인증 미들웨어 추가
+  failureRedirect: "/users/login",
+  failureFlash: "Failed to login.",
+  successRedirect: "/",
+  successFlash: "Logged in!"
+})
+
+res.locals.loggedIn = req.isAuthenticated(); // 로그인 상태를 나타내기 위한 loggedIn 변수의 설정
+res.locals.currentUser = req.user; // 로그인한 사용자를 나타내기 위한 currentUser 변수의 설
 
 module.exports = {
   index: (req, res, next) => {
@@ -176,3 +189,73 @@ module.exports = {
       });
   },
 };
+
+/**
+ * login 액션 추가
+ */
+login: (req, res) => {
+  res.render("users/login"); // 브라우저에서 폼의 렌더링을 위한 액션 추가
+}
+
+// create 액션에서 passport 등록과 플래시 메시지 추가
+create: (req, res, next) => {
+  if (req.skip) next();
+
+  let newUser = new User(getUserParams(req.body));
+
+  User.register(newUser, req.body.password, (e, user) => {
+    if(user) {
+      req.flash("success", `${user.fullName}'s account 
+        created successfully!`);
+        res.locals.redirect = "/users";
+        next();
+    } else {
+      req.flash("error", `Failed to create user account
+        because: ${e.message}.`);
+        res.locals.redirect = "/users/new";
+        next();
+    }
+  });
+}
+
+// validate 액션의 추가
+validate: (req, res, next) => { // validate 액션 추가
+  req
+    .sanitizeBody("email")
+    .normalizeEmail({
+      all_lowercas: true
+    })
+    .trim();
+  req.check("email", "Zip code is invalid").isEmail();
+  req
+    .check("zipCode", "Zip code is invalid")
+    .notEmpty()
+    .isInt()
+    .isLength({
+      min: 5,
+      max: 5
+    })
+    .equals(req.body.zipCode); // input 필드 데이터 체크 및 새니타이징
+  req.check("password", "Password cannot be empty").notEmpty();
+  req.getVaildationResult().then((error) => {
+    if (!error.isEmpty()) {
+      let messages = error.array().map(e => e.msg);
+      req.skip = true;
+      req.flash("error", messages.join(" and "));
+      res.locals.redirect = '/users/new'; // 에러를 수집하고 플래시 메시지로 출력
+      next();
+    } else {
+      next();
+    }
+  });
+}
+
+/**
+ * 로그아웃 액션 추가
+ */
+logout: (req, res, next) => {
+  req.logout();  // 사용자가 로그아웃을 위한 액션 추가
+  req.flash("success", "You have been logged out!");
+  res.locals.redirect = "/";
+  next();
+}

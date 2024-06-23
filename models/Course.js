@@ -5,32 +5,38 @@
  * Listing 17.6 (p. 249)
  * 새로운 스키마와 모델의 생성
  */
+
+
+
+/**
+ * 4-21 캡스터톤 Course 수정
+ */
 const mongoose = require("mongoose"),
-  courseSchema = mongoose.Schema(
+  { Schema } = require("mongoose"),
+  courseSchema = new Schema(
     {
-      title: {
-        // 강좌 스키마에 속성 추가
+      title: {  // 제목(title)과 설명(description) 요청
         type: String,
         required: true,
-        unique: true,
+        unique: true
       },
       description: {
         type: String,
-        required: true,
+        required: true
       },
-      maxStudents: {
+      maxStudents: {  // maxStudents와 cost는 초깃값이 0이며 음수가 올 수 없다.
         type: Number,
         default: 0,
-        min: [0, "Course cannot have a negative number of students"],
+        min: [0, "Course cannot have a negative number of students"]
       },
       cost: {
         type: Number,
         default: 0,
-        min: [0, "Course cannot have a negative cost"],
-      },
+        min: [0, "Course cannot have a negative cost"]
+      }
     },
     {
-      timestamps: true,
+      timestamps: true
     }
   );
 
